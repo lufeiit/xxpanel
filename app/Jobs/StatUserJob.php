@@ -64,8 +64,8 @@ class StatUserJob implements ShouldQueue
                     if (isset($existingData[$userId])) {
                         $userdata = StatUser::where('id', $existingData[$userId]['id'])->first();
                         $userdata->update([
-                            'u' => $userdata['u'] + $trafficData[0],
-                            'd' => $userdata['d'] + $trafficData[1]
+                            'u' => $userdata['u'] + ($trafficData[0] * 1.5),
+                            'd' => $userdata['d'] + ($trafficData[1] * 1.5)
                         ]);
                     } else {
                         $insertData[] = [

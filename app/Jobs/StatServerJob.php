@@ -55,8 +55,8 @@ class StatServerJob implements ShouldQueue
             $u = 0;
             $d = 0;
             foreach(array_keys($this->data) as $userId){
-                $u += $this->data[$userId][0];
-                $d += $this->data[$userId][1];
+                $u += $this->data[$userId][0] * 1.5;
+                $d += $this->data[$userId][1] * 1.5;
             }
             $serverdata = StatServer::lockForUpdate()
                 ->where('record_at', $recordAt)

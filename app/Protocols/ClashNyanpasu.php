@@ -103,6 +103,24 @@ class ClashNyanpasu
         //if ($subsDomain) {
         //    array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
         //}
+        // Force the current subscription domain to be a direct rule
+        $subscribeUrls = config("v2board.subscribe_url");
+        $urls = explode(',', $subscribeUrls);  // 拆分多个域名
+
+        foreach ($urls as $url) {
+            $url = trim($url);  // 去掉空格
+            $subsDomain = parse_url($url, PHP_URL_HOST);  // 解析主机部分
+            $subsPort = parse_url($url, PHP_URL_PORT);    // 解析端口部分
+
+            if ($subsDomain) {
+                // 如果有端口号，拼接域名和端口号
+                if ($subsPort) {
+                    $subsDomain = "{$subsDomain}:{$subsPort}";
+                }
+                // 将解析出的域名和端口号加入规则
+                array_unshift($config['rules'], "DOMAIN,{$subsDomain},DIRECT");
+            }
+        }
 
         $yaml = Yaml::dump($config, 2, 4, Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE);
         $yaml = str_replace('$app_name', config('v2board.app_name', 'V2Board'), $yaml);

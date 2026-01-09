@@ -117,7 +117,7 @@
                                         <td class="content-block"
                                             style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 34px; vertical-align: top; line-height: 1em; margin: 0; padding: 20px 0 30px;"
                                             valign="top">
-                                            Dear Customer
+                                            尊敬的用户
                                         </td>
                                     </tr>
                                     <tr
@@ -134,6 +134,20 @@
                                             style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 12px; color: #757575; vertical-align: top; margin: 0; padding: 0 0 20px;"
                                             valign="top">
                                             (本邮件由系统自动发出，请勿直接回复)
+                                            <br><br>若此邮件被拦截或在垃圾箱中，请将发信邮箱加入联系人或白名单
+                                        </td>
+                                    </tr>
+                                    <tr
+                                        style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 14px; margin: 0;">
+                                        <td class="content-block"
+                                            style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 12px; color: #757575; vertical-align: top; margin: 0; padding: 0 0 20px;"
+                                            valign="top">
+                                            <h4>如果与路飞云失联，可通过以下方式可以找到我们</h4>
+                                            <ul data-source-line="3">
+                                            <li>
+                                            <p><a href="https://sway.cloud.microsoft/MG3JKNnxAVuuQAnZ?ref=Link" target="_blank">点击访问</a></p>
+                                            </li>
+                                            </ul>
                                         </td>
                                     </tr>
                                     <tr

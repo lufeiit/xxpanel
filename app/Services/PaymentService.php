@@ -39,7 +39,7 @@ class PaymentService
     public function pay($order)
     {
         // custom notify domain name
-        $notifyUrl = url("/api/v1/guest/payment/notify/{$this->method}/{$this->config['uuid']}");
+        $notifyUrl = url("/lufei/guest/payment/notify/{$this->method}/{$this->config['uuid']}");
         if ($this->config['notify_domain']) {
             $parseUrl = parse_url($notifyUrl);
             $notifyUrl = $this->config['notify_domain'] . $parseUrl['path'];
@@ -47,7 +47,10 @@ class PaymentService
 
         return $this->payment->pay([
             'notify_url' => $notifyUrl,
-            'return_url' => url('/#/order/' . $order['trade_no']),
+            //'return_url' => url('/#/order/' . $order['trade_no']),
+            // 网站设置地址
+            'return_url' => config('v2board.app_url') . '/#/order/' . $order['trade_no'],
+            //'return_url' => $host . '/#/payment?trade_no=' . $order['trade_no'],
             'trade_no' => $order['trade_no'],
             'total_amount' => $order['total_amount'],
             'user_id' => $order['user_id'],

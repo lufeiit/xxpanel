@@ -52041,7 +52041,7 @@
         window.settings.host && (u = window.settings.host),
         document.title = window.settings.title;
         var l = {
-            serviceHost: c ? "http://localhost/api/v1" : u + "/api/v1"
+            serviceHost: c ? "http://localhost/lufei" : u + "/lufei"
         }
           , f = n("Y2fQ")
           , p = n("yWgo");
