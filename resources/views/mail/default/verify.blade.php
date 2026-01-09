@@ -150,10 +150,10 @@
                                         <td class="content-block"
                                             style="font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif; box-sizing: border-box; font-size: 12px; color: #757575; vertical-align: top; margin: 0; padding: 0 0 20px;"
                                             valign="top">
-                                            <h4>如果与路飞云失联，可通过以下方式可以找到我们</h4>
+                                            <h4>如果与迷途云失联，可通过以下方式可以找到我们</h4>
                                             <ul data-source-line="3">
                                             <li>
-                                            <p><a href="https://sway.cloud.microsoft/MG3JKNnxAVuuQAnZ?ref=Link" target="_blank">点击访问</a></p>
+                                            <p><a href="https://sway.cloud.microsoft/0Nm8DAdaImTzhtgK?ref=Link" target="_blank">点击访问</a></p>
                                             </li>
                                             </ul>
                                         </td>

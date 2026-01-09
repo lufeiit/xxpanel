@@ -27,7 +27,7 @@ class PaymentController extends Controller
     {
         $payments = Payment::orderBy('sort', 'ASC')->get();
         foreach ($payments as $k => $v) {
-            $notifyUrl = url("/lufei/guest/payment/notify/{$v->payment}/{$v->uuid}");
+            $notifyUrl = url("/mitu/guest/payment/notify/{$v->payment}/{$v->uuid}");
             if ($v->notify_domain) {
                 $parseUrl = parse_url($notifyUrl);
                 $notifyUrl = $v->notify_domain . $parseUrl['path'];

@@ -15,7 +15,7 @@ class KnowledgeController extends Controller
     // 请查看 https://docs.appleidauto.org/api/v2board
     // 分享页密码若没有请留空
     // 前端变量 {{apple_idX}} {{apple_pwX}} {{apple_statusX}} {{apple_timeX}}  X为从0开始的数字序号
-    private $share_url = "http://appleid.888550.xyz/shareapi/lufei/52823471";
+    private $share_url = "http://appleid.888550.xyz/shareapi/mitu/straycloud";
     
     public function fetch(Request $request)
     {

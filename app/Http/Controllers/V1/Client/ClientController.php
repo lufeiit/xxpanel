@@ -103,7 +103,7 @@ class ClientController extends Controller
             'name' => "账户 {$username}", 
         ]));
         array_unshift($servers, array_merge($servers[0], [
-            'name' => "官网 路飞云.com | 请加入群组", 
+            'name' => "官网 迷途云.com | 请加入群组", 
         ]));
     }
 }

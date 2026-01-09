@@ -64,12 +64,12 @@ class StripeALLInOne {
             'confirm' => true,
             'payment_method' => $stripePaymentMethod->id,
             'automatic_payment_methods' => ['enabled' => true],
-            'statement_descriptor' => 'LUFEI-#' . $order['user_id'] . '-' . substr($order['trade_no'], -8),
+            'statement_descriptor' => 'mitu-#' . $order['user_id'] . '-' . substr($order['trade_no'], -8),
             'metadata' => [
                 'user_id' => $order['user_id'],
                 'customer_email' => $userEmail,
                 'out_trade_no' => $order['trade_no'],
-                'identifier' => '路飞Cloud'
+                'identifier' => '迷途Cloud'
             ],
             'return_url' => $order['return_url']
         ];
@@ -120,7 +120,7 @@ class StripeALLInOne {
                         'currency' => $currency,
                         'unit_amount' => floor($order['total_amount'] * $exchange),
                         'product_data' => [
-                            'name' => 'LUFEI-#' . $order['user_id'] . '-' . substr($order['trade_no'], -8),
+                            'name' => 'mitu-#' . $order['user_id'] . '-' . substr($order['trade_no'], -8),
                         ]
                     ],
                     'quantity' => 1,

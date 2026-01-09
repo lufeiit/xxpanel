@@ -49,7 +49,7 @@ class BEasyPaymentUSDT {
         $curl->setUserAgent('BEPUSDT');
         $curl->setOpt(CURLOPT_SSL_VERIFYPEER, 0);
         $curl->setOpt(CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-        $curl->post($this->config['bepusdt_url'] . '/lufei/order/create-transaction', json_encode($params));
+        $curl->post($this->config['bepusdt_url'] . '/mitu/order/create-transaction', json_encode($params));
         $result = $curl->response;
         $curl->close();
 

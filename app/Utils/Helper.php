@@ -100,9 +100,9 @@ class Helper
     public static function getSubscribeUrl($token)
     {
         $submethod = (int)config('v2board.show_subscribe_method', 0);
-        $path = config('v2board.subscribe_path', '/lufei/client/subscribe');
+        $path = config('v2board.subscribe_path', '/mitu/client/subscribe');
         if (empty($path)) {
-            $path = '/lufei/client/subscribe';
+            $path = '/mitu/client/subscribe';
         } 
         $subscribeUrls = explode(',', config('v2board.subscribe_url'));
         $subscribeUrl = $subscribeUrls[rand(0, count($subscribeUrls) - 1)];

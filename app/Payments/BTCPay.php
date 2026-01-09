@@ -47,7 +47,7 @@ class BTCPay {
 
         $params_string = @json_encode($params);
 
-        $ret_raw = self::_curlPost($this->config['btcpay_url'] . 'lufei/stores/' . $this->config['btcpay_storeId'] . '/invoices', $params_string);
+        $ret_raw = self::_curlPost($this->config['btcpay_url'] . 'mitu/stores/' . $this->config['btcpay_storeId'] . '/invoices', $params_string);
 
         $ret = @json_decode($ret_raw, true);
         
@@ -87,7 +87,7 @@ class BTCPay {
             )
         ));
 
-        $invoiceDetail = file_get_contents($this->config['btcpay_url'] . 'lufei/stores/' . $this->config['btcpay_storeId'] . '/invoices/' . $json_param['invoiceId'], false, $context);
+        $invoiceDetail = file_get_contents($this->config['btcpay_url'] . 'mitu/stores/' . $this->config['btcpay_storeId'] . '/invoices/' . $json_param['invoiceId'], false, $context);
         $invoiceDetail = json_decode($invoiceDetail, true);
 
     

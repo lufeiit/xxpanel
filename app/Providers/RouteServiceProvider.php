@@ -68,7 +68,7 @@ class RouteServiceProvider extends ServiceProvider
     protected function mapApiRoutes()
     {
         Route::group([
-            'prefix' => '/lufei',
+            'prefix' => '/mitu',
             'middleware' => 'api',
             'namespace' => $this->namespace
         ], function ($router) {
