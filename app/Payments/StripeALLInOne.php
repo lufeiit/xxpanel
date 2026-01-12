@@ -69,7 +69,7 @@ class StripeALLInOne {
                 'user_id' => $order['user_id'],
                 'customer_email' => $userEmail,
                 'out_trade_no' => $order['trade_no'],
-                'identifier' => '迷途Cloud'
+                'identifier' => '迷途云'
             ],
             'return_url' => $order['return_url']
         ];
