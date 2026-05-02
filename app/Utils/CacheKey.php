@@ -33,12 +33,19 @@ class CacheKey
         'SERVER_V2NODE_LAST_PUSH_AT' => 'v2node节点最后推送时间',
         'TEMP_TOKEN' => '临时令牌',
         'LAST_SEND_EMAIL_REMIND_TRAFFIC' => '最后发送流量邮件提醒',
+        'REMIND_EXPIRE_SENT_COUNT' => '到期提醒发送次数',
         'SCHEDULE_LAST_CHECK_AT' => '计划任务最后检查时间',
         'REGISTER_IP_RATE_LIMIT' => '注册频率限制',
         'LAST_SEND_LOGIN_WITH_MAIL_LINK_TIMESTAMP' => '最后一次发送登入链接时间',
         'PASSWORD_ERROR_LIMIT' => '密码错误次数限制',
         'USER_SESSIONS' => '用户session',
-        'FORGET_REQUEST_LIMIT' => '找回密码次数限制'
+        'FORGET_REQUEST_LIMIT' => '找回密码次数限制',
+        'TELEGRAM_LOGIN_HASH' => 'Telegram登录哈希值',
+        'TELEGRAM_LOGIN_INVITE' => 'Telegram登录附带的邀请码', // 与登录hash绑定，注册时透传
+        'TELEGRAM_LOGIN_RESULT' => 'Telegram登录结果缓存', // 用于存储前端轮询的登录结果
+        'EMAIL_VERIFY_CODE_CONTEXT' => '邮箱验证码用途上下文', // 用于记录邮箱验证码的生成目的，防止跨场景滥用
+        'USER_CHECKIN_STATUS' => '用户签到状态', // 用于记录用户签到状态，防止重复签到
+        'SERVER_STATUS_LAST_REPORT_TIME' => '节点状态最后报告时间' // 用于记录节点状态报告的最后发送时间
     ];
 
     public static function get(string $key, $uniqueValue)
