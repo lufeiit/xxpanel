@@ -95,6 +95,14 @@ class Kernel extends ConsoleKernel
             $controller->dailySummary();
         })->dailyAt('00:15');
 
+        // ========== 每月收入统计任务 ==========
+        // 每月1号凌晨 00:20 执行上月15日至本月14日的综合数据统计，并发送 Telegram 通知
+        // 使用闭包调用 PaymentController 的 monthlySummary 方法
+        $schedule->call(function () {
+            $controller = new \App\Http\Controllers\V1\Guest\PaymentController();
+            $controller->monthlySummary();
+        })->monthlyOn(15, '00:30');
+
         // ========== 签到相关任务 ==========
         // 注释掉的签到缓存清理任务，每天凌晨 00:00 执行
         // $schedule->command('checkin:clear-cache')->dailyAt('00:00');
