@@ -49,7 +49,8 @@ class PaymentService
             'notify_url' => $notifyUrl,
             //'return_url' => url('/#/order/' . $order['trade_no']),
             // 网站设置地址
-            'return_url' => config('v2board.app_url') . '/#/order/' . $order['trade_no'],
+            //'return_url' => config('v2board.app_url') . '/#/order/' . $order['trade_no'],
+            'return_url' => config('v2board.app_url') . '/#/payment?trade_no=' . $order['trade_no'],
             //'return_url' => $host . '/#/payment?trade_no=' . $order['trade_no'],
             'trade_no' => $order['trade_no'],
             'total_amount' => $order['total_amount'],
