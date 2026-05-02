@@ -199,7 +199,9 @@ class PaymentController extends Controller
 
         // 用户基本信息段
         if ($user && $user->email) {
-            $messageLines[] = sprintf('📧 邮箱：%s', $user->email);
+            // 使用零宽空格打断邮箱格式,防止Telegram自动识别为超链接
+            $maskedEmail = str_replace('@', '@​', $user->email);
+            $messageLines[] = sprintf('📧 邮箱：%s', $maskedEmail);
         }
 
         if ($paymentAmountStr) {
@@ -208,6 +210,10 @@ class PaymentController extends Controller
 
         // 分隔线，增强可读性
         $messageLines[] = '———————————————';
+
+        if ($paidtime && $paidtime !== '未知') {
+            $messageLines[] = sprintf('🕐 时间：%s', $paidtime);
+        }
 
         if ($user && $user->id) {
             $messageLines[] = sprintf('🆔 ＩＤ：%s', $user->id);
@@ -218,25 +224,21 @@ class PaymentController extends Controller
             $messageLines[] = sprintf('📦 套餐：%s', $plan->name);
         }
 
-        if ($order->trade_no) {
-            $messageLines[] = sprintf('🧾 订单：%s', $order->trade_no);
+        if ($periodName) {
+            $messageLines[] = sprintf('📅 周期：%s', $periodName);
         }
-
-        if ($paidtime && $paidtime !== '未知') {
-            $messageLines[] = sprintf('🕐 时间：%s', $paidtime);
-        }
-
-        // 分隔线，增强可读性
-        $messageLines[] = '———————————————';
 
         // 支付详细信息段
         if ($payment && $payment->name) {
             $messageLines[] = sprintf('🌐 支付：%s', $payment->name);
         }
 
-        if ($periodName) {
-            $messageLines[] = sprintf('📅 周期：%s', $periodName);
+        if ($order->trade_no) {
+            $messageLines[] = sprintf('🧾 订单：%s', $order->trade_no);
         }
+
+        // 分隔线，增强可读性
+        $messageLines[] = '———————————————';
 
         if ($coupon && $coupon->name) {
             $messageLines[] = sprintf('🎫 优惠券：%s', $coupon->name);
@@ -248,7 +250,9 @@ class PaymentController extends Controller
 
         // 邀请返佣信息段
         if ($inviter && $inviter->email) {
-            $messageLines[] = sprintf('👥 邀请人：%s', $inviter->email);
+            // 使用零宽空格打断邮箱格式,防止Telegram自动识别为超链接
+            $maskedInviterEmail = str_replace('@', '@​', $inviter->email);
+            $messageLines[] = sprintf('👥 邀请人：%s', $maskedInviterEmail);
         }
 
         if ($order->commission_balance && $order->commission_balance > 0) {
@@ -453,11 +457,13 @@ class PaymentController extends Controller
             
             // 只有成功获取到邮箱才加入排行列表
             if ($email) {
-                // 计算总流量（字节转 GB，保留两位小数）
+                // 计算总流量(字节转 GB,保留两位小数)
                 $total_gb = number_format(($stat->total_d + $stat->total_u) / $gb, 2);
-                
-                // 格式化输出：邮箱 -- 共总流量 GB
-                $lines[] = sprintf('%s -- %s GB', $email, $total_gb);
+                            
+                // 使用零宽空格打断邮箱格式,防止Telegram自动识别为超链接
+                $maskedEmail = str_replace('@', '@​', $email);
+                // 格式化输出:邮箱 -- 共总流量 GB
+                $lines[] = sprintf('%s -- %s GB', $maskedEmail, $total_gb);
             }
         }
 
