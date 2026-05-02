@@ -5,6 +5,8 @@ namespace App\Http\Controllers\V1\Guest;
 use App\Http\Controllers\Controller;
 use App\Services\TelegramService;
 use Illuminate\Http\Request;
+use App\Http\Controllers\V1\Passport\OAuthController;
+use Illuminate\Support\Facades\App; // 添加对 App Facade 的引用
 
 class TelegramController extends Controller
 {
@@ -14,8 +16,11 @@ class TelegramController extends Controller
 
     public function __construct(Request $request)
     {
-        if ($request->input('access_token') !== md5(config('v2board.telegram_bot_token'))) {
-            abort(401);
+        // 只在非命令行环境下执行访问令牌检查
+        if (!App::runningInConsole()) {
+            if ($request->input('access_token') !== md5(config('v2board.telegram_bot_token'))) {
+                abort(401);
+            }
         }
 
         $this->telegramService = new TelegramService();
@@ -23,6 +28,7 @@ class TelegramController extends Controller
 
     public function webhook(Request $request)
     {
+        \Log::info("=== TelegramController@webhook called ===");
         $this->formatMessage($request->input());
         $this->formatChatJoinRequest($request->input());
         $this->handle();
@@ -85,6 +91,7 @@ class TelegramController extends Controller
         $obj->message_type = 'message';
         $obj->text = $data['message']['text'];
         $obj->is_private = $data['message']['chat']['type'] === 'private';
+        $obj->first_name = $data['message']['from']['first_name'] ?? 'User';
         if (isset($data['message']['reply_to_message']['text'])) {
             $obj->message_type = 'reply_message';
             $obj->reply_text = $data['message']['reply_to_message']['text'];
@@ -119,5 +126,13 @@ class TelegramController extends Controller
             $data['chat_join_request']['chat']['id'],
             $data['chat_join_request']['from']['id']
         );
+    }
+    
+    // 新增方法：处理 Telegram 登录回调
+    public function handleLoginCallback(Request $request)
+    {
+        // 创建 OAuthController 实例并调用 handleTelegramBotCallback
+        $oauthController = new OAuthController();
+        return $oauthController->handleTelegramBotCallback($request);
     }
 }
