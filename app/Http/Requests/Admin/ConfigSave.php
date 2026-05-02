@@ -42,6 +42,8 @@ class ConfigSave extends FormRequest
         'tos_url' => 'nullable|url',
         'currency' => '',
         'currency_symbol' => '',
+        'checkin_enable' => 'in:0,1',
+        'lucky_checkin_enable' => 'in:0,1',
         // subscribe
         'plan_change_enable' => 'in:0,1',
         'reset_traffic_method' => 'in:0,1,2,3,4',
@@ -61,6 +63,7 @@ class ConfigSave extends FormRequest
         'device_limit_mode' => 'in:0,1',
         'server_node_report_min_traffic' => 'integer', 
         'server_device_online_min_traffic' => 'integer', 
+        'server_status_report_hour' => 'integer',
         // frontend
         'frontend_theme' => '',
         'frontend_theme_sidebar' => 'nullable|in:dark,light',
@@ -75,6 +78,11 @@ class ConfigSave extends FormRequest
         'email_password' => '',
         'email_encryption' => '',
         'email_from_address' => '',
+        'remind_expire_days' => 'integer|min:1|max:365',
+        'remind_expire_times' => 'integer|min:1|max:24',
+        'remind_traffic_percent' => 'integer|min:1|max:100',
+        'remind_expire_default' => 'in:0,1',
+        'remind_traffic_default' => 'in:0,1',
         // telegram
         'telegram_bot_enable' => 'in:0,1',
         'telegram_bot_token' => '',
