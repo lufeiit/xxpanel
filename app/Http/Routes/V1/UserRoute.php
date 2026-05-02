@@ -26,6 +26,8 @@ class UserRoute
             $router->post('/getQuickLoginUrl', 'V1\\User\\UserController@getQuickLoginUrl');
             $router->get ('/getActiveSession', 'V1\\User\\UserController@getActiveSession');
             $router->post('/removeActiveSession', 'V1\\User\\UserController@removeActiveSession');
+            // Checkin
+            $router->post('/checkin', 'V1\\User\\CheckinController@checkin');
             // Order
             $router->post('/order/save', 'V1\\User\\OrderController@save');
             $router->post('/order/checkout', 'V1\\User\\OrderController@checkout');
@@ -52,16 +54,20 @@ class UserRoute
             $router->get ('/server/fetch', 'V1\\User\\ServerController@fetch');
             // Coupon
             $router->post('/coupon/check', 'V1\\User\\CouponController@check');
+            $router->get ('/coupon/fetch', 'V1\\User\\CouponController@fetch');
             // Telegram
             $router->get ('/telegram/getBotInfo', 'V1\\User\\TelegramController@getBotInfo');
             // Comm
             $router->get ('/comm/config', 'V1\\User\\CommController@config');
             $router->Post('/comm/getStripePublicKey', 'V1\\User\\CommController@getStripePublicKey');
+            $router->get ('/comm/getIpInfo', 'V1\\User\\CommController@getIpInfo');
             // Knowledge
             $router->get ('/knowledge/fetch', 'V1\\User\\KnowledgeController@fetch');
             $router->get ('/knowledge/getCategory', 'V1\\User\\KnowledgeController@getCategory');
             // Stat
             $router->get ('/stat/getTrafficLog', 'V1\\User\\StatController@getTrafficLog');
+            // Delete Account
+            $router->post('/deleteAccount', 'V1\\User\\UserController@deleteAccount');
         });
     }
 }
