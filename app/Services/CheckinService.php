@@ -1,0 +1,222 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\User;
+use App\Utils\CacheKey;
+use App\Utils\Helper;
+use Illuminate\Support\Facades\Cache;
+
+class CheckinService
+{
+    /**
+     * 普通签到
+     * 随机获得 10MB 到 1GB 流量
+     *
+     * @param User $user
+     * @return array
+     */
+    public function standardCheckin(User $user)
+    {
+        // 检查用户今日是否已签到
+        $checkinCheck = $this->checkUserCheckinStatus($user);
+        if (!$checkinCheck['data']) {
+            return $checkinCheck;
+        }
+
+        // 检查用户是否有有效订阅
+        $subscriptionCheck = $this->checkUserSubscription($user);
+        if (!$subscriptionCheck['data']) {
+            return $subscriptionCheck;
+        }
+
+        // 生成随机流量 (10MB - 1GB)
+        $min = 10 * 1024 * 1024; // 10MB
+        $max = 1024 * 1024 * 1024; // 1GB
+        $traffic = rand($min, $max);
+
+        // 通过减少已用流量(d)来增加剩余流量，而不是增加总流量
+        // 这样续费时重置 transfer_enable 不会影响签到效果
+        // 允许 d 变成负数，相当于"预存"流量
+        $user->d -= $traffic;
+        $user->save();
+
+        // 记录用户签到状态
+        $this->setUserCheckinStatus($user);
+
+        // 返回结果
+        return [
+            'data' => true,
+            'message' => '签到成功！获得 +' . Helper::trafficConvert($traffic) . ' 流量 (10MB-1GB随机)',
+            'traffic' => $traffic
+        ];
+    }
+
+    /**
+     * 运气签到
+     * 用户输入指定流量，获得 +- 流量
+     *
+     * @param User $user
+     * @param float $value 用户输入的数值
+     * @param string $unit 单位 (MB 或 GB)
+     * @return array
+     */
+    public function luckyCheckin(User $user, float $value, string $unit = 'GB')
+    {
+        // 检查用户今日是否已签到
+        $checkinCheck = $this->checkUserCheckinStatus($user);
+        if (!$checkinCheck['data']) {
+            return $checkinCheck;
+        }
+
+        // 检查用户是否有有效订阅
+        $subscriptionCheck = $this->checkUserSubscription($user);
+        if (!$subscriptionCheck['data']) {
+            return $subscriptionCheck;
+        }
+
+        // 检查单位是否合法
+        if (!in_array(strtoupper($unit), ['MB', 'GB'])) {
+            return [
+                'data' => false,
+                'message' => '单位必须是 MB 或 GB'
+            ];
+        }
+
+        // 转换为字节
+        $multiplier = strtoupper($unit) === 'GB' ? 1024 * 1024 * 1024 : 1024 * 1024;
+        $inputBytes = (int) ($value * $multiplier);
+
+        // 检查输入值是否超过用户剩余流量
+        $usedTraffic = $user->u + $user->d; // 已用流量
+        $remainingTraffic = $user->transfer_enable - $usedTraffic; // 剩余流量
+
+        // 检查输入值是否合法 (1-剩余流量)
+        if ($value < 1 || $inputBytes > $remainingTraffic) {
+            return [
+                'data' => false,
+                'message' => '输入的数值必须在 1 到您当前剩余流量 (' . Helper::trafficConvert($remainingTraffic) . ') 之间'
+            ];
+        }
+
+        // 生成随机流量 (-inputBytes 到 +inputBytes)
+        $traffic = rand(-$inputBytes, $inputBytes);
+
+        // 通过调整已用流量(d)来改变剩余流量，而不是改变总流量
+        // 获得流量(traffic > 0)：减少 d，增加剩余流量
+        // 扣除流量(traffic < 0)：增加 d，减少剩余流量
+        // 允许 d 变成负数，相当于"预存"流量
+        if ($traffic >= 0) {
+            // 获得流量：减少已用流量（允许变成负数）
+            $user->d -= $traffic;
+        } else {
+            // 扣除流量：增加已用流量，但不能超过剩余流量
+            $absTraffic = abs($traffic);
+            $currentRemaining = $user->transfer_enable - $user->u - $user->d;
+            $actualDeduct = min($absTraffic, $currentRemaining); // 不能扣成负剩余
+            $user->d += $actualDeduct;
+            $traffic = -$actualDeduct; // 实际扣除的流量
+        }
+
+        $user->save();
+
+        // 记录用户签到状态
+        $this->setUserCheckinStatus($user);
+
+        // 返回结果
+        $sign = $traffic >= 0 ? '获得 +' : '扣除 ';
+        return [
+            'data' => true,
+            'message' => '运气签到成功！可能获得-' . Helper::trafficConvert($inputBytes) . '到+' . Helper::trafficConvert($inputBytes) . '流量，本次' . $sign . Helper::trafficConvert(abs($traffic)) . '流量',
+            'traffic' => $traffic
+        ];
+    }
+
+    /**
+     * 运气签到 (字符串参数版本)
+     * 用户输入指定流量，获得 +- 流量
+     * 支持格式如 "100GB" 或 "50MB"
+     *
+     * @param User $user
+     * @param string $input 用户输入的字符串，格式为数值+单位
+     * @return array
+     */
+    public function luckyCheckinFromString(User $user, string $input)
+    {
+        // 检查用户是否有有效订阅
+        $subscriptionCheck = $this->checkUserSubscription($user);
+        if (!$subscriptionCheck['data']) {
+            return $subscriptionCheck;
+        }
+
+        // 使用正则表达式分离数值和单位
+        if (!preg_match('/^(\d+)(MB|GB)$/i', $input, $matches)) {
+            return [
+                'data' => false,
+                'message' => '参数格式错误，请使用格式：数值+单位，例如：10GB'
+            ];
+        }
+
+        $value = (int) $matches[1];
+        $unit = strtoupper($matches[2]);
+
+        // 复用现有的luckyCheckin方法
+        return $this->luckyCheckin($user, $value, $unit);
+    }
+
+    /**
+     * 检查用户是否有有效订阅
+     *
+     * @param User $user
+     * @return array
+     */
+    private function checkUserSubscription(User $user)
+    {
+        // 检查用户是否有订阅计划
+        if ($user->plan_id === null) {
+            return [
+                'data' => false,
+                'message' => '您没有订阅任何套餐，无法进行签到'
+            ];
+        }
+
+        return [
+            'data' => true
+        ];
+    }
+
+    /**
+     * 检查用户今日是否已签到
+     *
+     * @param User $user
+     * @return array
+     */
+    private function checkUserCheckinStatus(User $user)
+    {
+        $cacheKey = CacheKey::get('USER_CHECKIN_STATUS', $user->id . '_' . date('Ymd'));
+        if (Cache::has($cacheKey)) {
+            return [
+                'data' => false,
+                'message' => '您今天已经签到过，请勿重复签到'
+            ];
+        }
+
+        return [
+            'data' => true
+        ];
+    }
+
+    /**
+     * 记录用户签到状态
+     *
+     * @param User $user
+     * @return void
+     */
+    private function setUserCheckinStatus(User $user)
+    {
+        $cacheKey = CacheKey::get('USER_CHECKIN_STATUS', $user->id . '_' . date('Ymd'));
+        // 设置缓存过期时间为当天剩余时间
+        $seconds = strtotime('tomorrow') - time();
+        Cache::put($cacheKey, true, $seconds);
+    }
+}
