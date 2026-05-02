@@ -258,22 +258,23 @@ class PaymentController extends Controller
         if ($registerDate && $registerDate !== '未知') {
             $messageLines[] = sprintf('📅 注册：%s', $registerDate);
         }
-
+        
         // 第二道分隔线
-        $messageLines[] = '———————————————';
+        // $messageLines[] = '———————————————';
 
         // 今日统计信息段（仅在有数据时显示）
-        if ($todayIncome > 0) {
-            $messageLines[] = sprintf('💵 今日收入金额：%s 元', number_format($todayIncome / 100, 2));
-        }
+        // if ($todayIncome > 0) {
+        //     $messageLines[] = sprintf('💵 今日收入金额：%s 元', number_format($todayIncome / 100, 2));
+        // }
 
-        if ($todayCommissionBalance > 0) {
-            $messageLines[] = sprintf('💵 今日返佣金额：%s 元', number_format($todayCommissionBalance / 100, 2));
-        }
+        // if ($todayCommissionBalance > 0) {
+        //     $messageLines[] = sprintf('💵 今日返佣金额：%s 元', number_format($todayCommissionBalance / 100, 2));
+        // }
 
-        if ($todayCommissionCount > 0) {
-            $messageLines[] = sprintf('💵 今日返佣次数：%s', $todayCommissionCount);
-        }
+        // if ($todayCommissionCount > 0) {
+        //     $messageLines[] = sprintf('💵 今日返佣次数：%s', $todayCommissionCount);
+        // }
+        
 
         // 将所有消息行用换行符连接，生成最终的通知内容
         $message = implode("\n", $messageLines);
@@ -338,10 +339,10 @@ class PaymentController extends Controller
         // ==================== 生成流量排行数据 ====================
         
         // 获取昨日节点流量排行文本（前15名）
-        $serverRankText = $this->getYesterdayServerRankingText($yesterdayStart, $yesterdayEnd);
+        $serverRankText = $this->getServerRankingText($yesterdayStart, $yesterdayEnd);
         
         // 获取昨日用户流量排行文本（前15名）
-        $userRankText = $this->getYesterdayUserRankingText($yesterdayStart, $yesterdayEnd);
+        $userRankText = $this->getUserRankingText($yesterdayStart, $yesterdayEnd);
 
         // ==================== 构建并发送通知消息 ====================
         
@@ -366,37 +367,32 @@ class PaymentController extends Controller
     }
 
     /**
-     * 获取昨日节点流量排行文本
+     * 获取节点流量排行文本（通用方法）
      *
-     * 从 v2_stat_server 表中查询昨日的节点流量数据，
+     * 从 v2_stat_server 表中查询指定时间范围的节点流量数据，
      * 按总流量（下载+上传）降序排序，取前15名，
      * 并格式化为易读的文本消息。
      *
-     * @param int $yesterdayStart 昨日起始时间戳（昨天 00:00:00）
-     * @param int $yesterdayEnd 昨日结束时间戳（昨天 23:59:59）
+     * @param int $startTime 起始时间戳
+     * @param int $endTime 结束时间戳
      * @return string 格式化后的节点流量排行文本
      */
-    private function getYesterdayServerRankingText($yesterdayStart, $yesterdayEnd)
+    private function getServerRankingText($startTime, $endTime)
     {
         // 定义 1GB 的字节数（用于流量单位转换）
         $gb = 1024 * 1024 * 1024;
 
-        // 使用 StatServer 模型查询昨日节点流量统计数据
-        // select: 选择 server_id、server_type，以及 SUM(D) 和 SUM(U) 聚合函数
-        // where: 限定时间为昨日范围
-        // groupBy: 按 server_id 和 server_type 分组（同一节点可能有多种类型记录）
-        // orderBy: 按总流量（下载+上传）降序排列
-        // limit: 只取前15名
+        // 使用 StatServer 模型查询节点流量统计数据
         $serverStats = StatServer::select(
             'server_id', 
             'server_type', 
-            \DB::raw('SUM(D) as total_d'),  // 下载流量总和
-            \DB::raw('SUM(U) as total_u')   // 上传流量总和
+            DB::raw('SUM(D) as total_d'),  // 下载流量总和
+            DB::raw('SUM(U) as total_u')   // 上传流量总和
         )
-            ->where('record_at', '>=', $yesterdayStart)
-            ->where('record_at', '<=', $yesterdayEnd)
+            ->where('record_at', '>=', $startTime)
+            ->where('record_at', '<=', $endTime)
             ->groupBy('server_id', 'server_type')
-            ->orderBy(\DB::raw('SUM(D) + SUM(U)'), 'desc')
+            ->orderBy(DB::raw('SUM(D) + SUM(U)'), 'desc')
             ->limit(15)
             ->get();
 
@@ -408,12 +404,10 @@ class PaymentController extends Controller
             
             // 只有成功获取到节点名称才加入排行列表
             if ($name) {
-                // 计算下载、上传和总流量（字节转 GB，保留两位小数）
+                // 计算总流量（字节转 GB，保留两位小数）
                 $total_gb = number_format(($stat->total_d + $stat->total_u) / $gb, 2);
-                $d_gb = number_format($stat->total_d / $gb, 2);
-                $u_gb = number_format($stat->total_u / $gb, 2);
                 
-                // 格式化输出：节点名 -- ↓下载 GB + ↑上传 GB = 共总流量 GB
+                // 格式化输出：节点名 -- 共总流量 GB
                 $lines[] = sprintf('%s -- %s GB', $name, $total_gb);
             }
         }
@@ -423,36 +417,31 @@ class PaymentController extends Controller
     }
 
     /**
-     * 获取昨日用户流量排行文本
+     * 获取用户流量排行文本（通用方法）
      *
-     * 从 v2_stat_user 表中查询昨日的用户流量数据，
+     * 从 v2_stat_user 表中查询指定时间范围的用户流量数据，
      * 按总流量（下载+上传）降序排序，取前15名，
      * 并关联用户表获取邮箱，格式化为易读的文本消息。
      *
-     * @param int $yesterdayStart 昨日起始时间戳（昨天 00:00:00）
-     * @param int $yesterdayEnd 昨日结束时间戳（昨天 23:59:59）
+     * @param int $startTime 起始时间戳
+     * @param int $endTime 结束时间戳
      * @return string 格式化后的用户流量排行文本
      */
-    private function getYesterdayUserRankingText($yesterdayStart, $yesterdayEnd)
+    private function getUserRankingText($startTime, $endTime)
     {
         // 定义 1GB 的字节数（用于流量单位转换）
         $gb = 1024 * 1024 * 1024;
 
-        // 使用 StatUser 模型查询昨日用户流量统计数据
-        // select: 选择 user_id，以及 SUM(D) 和 SUM(U) 聚合函数
-        // where: 限定时间为昨日范围
-        // groupBy: 按 user_id 分组
-        // orderBy: 按总流量（下载+上传）降序排列
-        // limit: 只取前15名
+        // 使用 StatUser 模型查询用户流量统计数据
         $userStats = StatUser::select(
             'user_id',
-            \DB::raw('SUM(D) as total_d'),  // 下载流量总和
-            \DB::raw('SUM(U) as total_u')   // 上传流量总和
+            DB::raw('SUM(D) as total_d'),  // 下载流量总和
+            DB::raw('SUM(U) as total_u')   // 上传流量总和
         )
-            ->where('record_at', '>=', $yesterdayStart)
-            ->where('record_at', '<=', $yesterdayEnd)
+            ->where('record_at', '>=', $startTime)
+            ->where('record_at', '<=', $endTime)
             ->groupBy('user_id')
-            ->orderBy(\DB::raw('SUM(D) + SUM(U)'), 'desc')
+            ->orderBy(DB::raw('SUM(D) + SUM(U)'), 'desc')
             ->limit(15)
             ->get();
 
@@ -464,18 +453,116 @@ class PaymentController extends Controller
             
             // 只有成功获取到邮箱才加入排行列表
             if ($email) {
-                // 计算下载、上传和总流量（字节转 GB，保留两位小数）
+                // 计算总流量（字节转 GB，保留两位小数）
                 $total_gb = number_format(($stat->total_d + $stat->total_u) / $gb, 2);
-                $d_gb = number_format($stat->total_d / $gb, 2);
-                $u_gb = number_format($stat->total_u / $gb, 2);
                 
-                // 格式化输出：邮箱 -- ↓下载 GB + ↑上传 GB = 共总流量 GB
+                // 格式化输出：邮箱 -- 共总流量 GB
                 $lines[] = sprintf('%s -- %s GB', $email, $total_gb);
             }
         }
 
         // 返回带有标题的完整排行文本
         return "📊 用户流量排行：\n———————————————\n" . implode("\n", $lines);
+    }
+
+    /**
+     * 每月统计汇总 - 发送上月综合业务数据报告
+     *
+     * 该定时任务方法会在每月1号执行，统计从上月15日到本月14日的完整业务数据：
+     * 1. 统计该周期的订单数量、订单总金额
+     * 2. 统计该周期的返现次数、返佣金额
+     * 3. 统计该周期新增用户数
+     * 4. 生成该周期节点流量排行（前15名）
+     * 5. 生成该周期用户流量排行（前15名）
+     * 6. 将所有统计数据通过 Telegram 发送给管理员
+     *
+     * @return void
+     */
+    public function monthlySummary()
+    {
+        // ==================== 计算统计时间范围（上月15日 到 本月14日）====================
+        
+        // 获取当前日期信息
+        $currentYear = date('Y');
+        $currentMonth = date('m');
+        
+        // 计算统计周期起始时间：上月15日 00:00:00
+        $lastMonth15 = date('Y-m-15', strtotime('-1 month'));
+        $periodStart = strtotime($lastMonth15 . ' 00:00:00');
+        
+        // 计算统计周期结束时间：本月14日 23:59:59
+        $currentMonth14 = date('Y-m-14');
+        $periodEnd = strtotime($currentMonth14 . ' 23:59:59');
+        
+        // 用于显示的周期描述（如：2026年04月15日 至 2026年05月14日）
+        $startDateDisplay = date('Y年m月d日', $periodStart);
+        $endDateDisplay = date('Y年m月d日', $periodEnd);
+        $periodDisplay = sprintf('%s 至 %s', $startDateDisplay, $endDateDisplay);
+        
+        // 用于显示的统计月份（以上月为主，如：2026年04月）
+        $statMonth = date('Y年m月', $periodStart);
+
+        // ==================== 统计周期内订单数据 ====================
+        
+        // 统计周期内有效订单总数（排除状态为 0-待支付 和 2-已取消/失败的订单）
+        $totalOrders = Order::where('created_at', '>=', $periodStart)
+            ->where('created_at', '<=', $periodEnd)
+            ->whereNotIn('status', [0, 2])
+            ->count();
+
+        // 统计周期内订单金额总和（单位：分，后续需要除以100转换为元）
+        $totalAmount = Order::where('created_at', '>=', $periodStart)
+            ->where('created_at', '<=', $periodEnd)
+            ->whereNotIn('status', [0, 2])
+            ->sum('total_amount');
+
+        // 统计周期内产生返现的订单数量（commission_balance > 0 表示有返佣）
+        $commissionCount = Order::where('created_at', '>=', $periodStart)
+            ->where('created_at', '<=', $periodEnd)
+            ->whereNotIn('status', [0, 2])
+            ->where('commission_balance', '>', 0)
+            ->count();
+
+        // 统计周期内返佣金额总和（单位：分）
+        $commissionAmount = Order::where('created_at', '>=', $periodStart)
+            ->where('created_at', '<=', $periodEnd)
+            ->whereNotIn('status', [0, 2])
+            ->sum('commission_balance');
+
+        // ==================== 统计周期内新增用户数 ====================
+        
+        $newUsersCount = User::where('created_at', '>=', $periodStart)
+            ->where('created_at', '<=', $periodEnd)
+            ->count();
+
+        // ==================== 生成流量排行数据 ====================
+        
+        // 获取周期内节点流量排行文本（前15名）
+        $serverRankText = $this->getServerRankingText($periodStart, $periodEnd);
+        
+        // 获取周期内用户流量排行文本（前15名）
+        $userRankText = $this->getUserRankingText($periodStart, $periodEnd);
+
+        // ==================== 构建并发送通知消息 ====================
+        
+        // 使用数组方式构建订单统计信息，确保换行符正确显示
+        $messageLines = [];
+        $messageLines[] = sprintf('📊 %s 月度统计（%s）：', $statMonth, $periodDisplay);
+        $messageLines[] = '———————————————';
+        $messageLines[] = sprintf('👥 新增用户：%d 人', $newUsersCount);
+        $messageLines[] = sprintf('📑 订单总数：%d 单', $totalOrders);
+        $messageLines[] = sprintf('💰 订单金额：%s 元', number_format($totalAmount / 100, 2));  // 分转元，保留两位小数
+        $messageLines[] = sprintf('💸 返现次数：%d 单', $commissionCount);
+        $messageLines[] = sprintf('💵 返现金额：%s 元', number_format($commissionAmount / 100, 2));  // 分转元，保留两位小数
+        
+        $message = implode("\n", $messageLines);
+
+        // 将节点流量排行和用户流量排行追加到消息末尾
+        $message .= "\n\n\n\n" . $serverRankText . "\n\n\n\n" . $userRankText;
+
+        // 创建 Telegram 服务实例并发送消息给所有管理员
+        $telegramService = new TelegramService();
+        $telegramService->sendMessageWithAdmin($message);
     }
 
     /**
