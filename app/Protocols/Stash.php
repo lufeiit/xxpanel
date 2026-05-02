@@ -169,9 +169,9 @@ class Stash
         $array['cipher'] = 'auto';
         $array['udp'] = true;
 
-        if ($server['tls']) {
+        if (!empty($server['tls'])) {
             $array['tls'] = true;
-            if ($server['tlsSettings']) {
+            if (!empty($server['tlsSettings'])) {
                 $tlsSettings = $server['tlsSettings'];
                 if (isset($tlsSettings['allowInsecure']) && !empty($tlsSettings['allowInsecure']))
                     $array['skip-cert-verify'] = ($tlsSettings['allowInsecure'] ? true : false);
@@ -227,9 +227,9 @@ class Stash
         $array['flow'] = $server['flow'] ?? null;
         $array['udp'] = true;
 
-        if ($server['tls']) {
+        if (!empty($server['tls'])) {
             $array['tls'] = true;
-            if ($server['tls_settings']) {
+            if (!empty($server['tls_settings'])) {
                 $tlsSettings = $server['tls_settings'];
                 if (isset($tlsSettings['server_name']) && !empty($tlsSettings['server_name']))
                    $array['servername'] = $tlsSettings['server_name'];
@@ -420,14 +420,11 @@ class Stash
             'port' => $server['port'],
             'password' => $password,
         ];
-        if ($server['tls']) {
-            $array['tls'] = true;
-            $tlsSettings = $server['tls_settings'] ?? [];
-            $array['client-fingerprint'] = !empty($tlsSettings['fingerprint']) ? $tlsSettings['fingerprint'] : 'chrome';
-            $array['sni'] = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
-            $array['skip-cert-verify'] = ($server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0)) == 1 ? true : false;
-        }
-        return $array; 
+        $tlsSettings = $server['tls_settings'] ?? [];
+        $array['client-fingerprint'] = !empty($tlsSettings['fingerprint']) ? $tlsSettings['fingerprint'] : 'chrome';
+        $array['sni'] = $server['server_name'] ?? ($tlsSettings['server_name'] ?? '');
+        $array['skip-cert-verify'] = ($server['insecure'] ?? ($tlsSettings['allow_insecure'] ?? 0)) == 1 ? true : false;
+        return $array;
     }
 
     private function isRegex($exp)
