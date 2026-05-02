@@ -49,13 +49,53 @@ class Helper
         if ($special) {
             $chars .= '!@#$?|{/:%^&*()-_[]}<>=+,.';
         }
-        
+
         $str = '';
         $max = strlen($chars) - 1;
         for ($i = 0; $i < $len; $i++) {
             $str .= $chars[random_int(0, $max)];
         }
         return $str;
+    }
+
+    /**
+     * 生成 Telegram 登录码
+     * @param int $length 登录码长度，默认16位
+     * @return string
+     */
+    public static function generateTelegramLoginCode($length = 16)
+    {
+        return self::randomChar($length);
+    }
+
+    /**
+     * 对邮箱地址进行脱敏处理
+     * 例如：test@example.com -> t***t@example.com
+     * @param string $email 完整的邮箱地址
+     * @return string 脱敏后的邮箱地址
+     */
+    public static function maskEmail($email)
+    {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            // 如果不是有效邮箱，返回原值或一个默认值
+            return $email;
+        }
+
+        $emailParts = explode('@', $email);
+        $username = $emailParts[0];
+        $domain = $emailParts[1];
+
+        $usernameLength = strlen($username);
+        if ($usernameLength == 1) {
+            // 如果用户名只有1位，例如 a@gmail.com -> a***@gmail.com
+            return $username . '******@' . $domain;
+        } else if ($usernameLength == 2) {
+            // 如果用户名只有2位，例如 ab@gmail.com -> a***b@gmail.com
+            return $username[0] . '******' . $username[1] . '@' . $domain;
+        } else {
+            // 如果用户名大于2位，例如 test@gmail.com -> t***t@gmail.com
+            return $username[0] . '******' . $username[$usernameLength - 1] . '@' . $domain;
+        }
     }
 
     public static function multiPasswordVerify($algo, $salt, $password, $hash)
@@ -103,7 +143,7 @@ class Helper
         $path = config('v2board.subscribe_path', '/lufei/client/subscribe');
         if (empty($path)) {
             $path = '/lufei/client/subscribe';
-        } 
+        }
         $subscribeUrls = explode(',', config('v2board.subscribe_url'));
         $subscribeUrl = $subscribeUrls[rand(0, count($subscribeUrls) - 1)];
         switch ($submethod) {
@@ -172,7 +212,7 @@ class Helper
     {
         if ($server['type'] == 'v2node') {
             $server['type'] = $server['protocol'];
-        } 
+        }
         $method = "build" . ucfirst($server['type']) . "Uri";
 
         if (method_exists(self::class, $method)) {
@@ -243,10 +283,12 @@ class Helper
             $config['allowInsecure'] = (int)($tlsSettings['allow_insecure'] ?? $tlsSettings['allowInsecure'] ?? 0);
             $config['sni'] = $tlsSettings['server_name'] ?? $tlsSettings['serverName'] ?? '';
         }
-        
+
         $network = (string)$server['network'];
         $networkSettings = $server['networkSettings'] ?? ($server['network_settings'] ?? []);
-    
+
+        $networkSettings = $server['networkSettings'] ?? [];
+
         switch ($network) {
             case 'tcp':
                 if (!empty($networkSettings['header']['type']) && $networkSettings['header']['type'] === 'http') {
@@ -255,13 +297,13 @@ class Helper
                     $config['path'] = $networkSettings['header']['request']['path'][0] ?? null;
                 }
                 break;
-    
+
             case 'ws':
                 $config['path'] = $networkSettings['path'] ?? null;
                 $config['host'] = $networkSettings['headers']['Host'] ?? null;
                 isset($networkSettings['security']) && $config['scy'] = $networkSettings['security'];
                 break;
-    
+
             case 'grpc':
                 $config['path'] = $networkSettings['serviceName'] ?? null;
                 break;
@@ -277,7 +319,7 @@ class Helper
                 $config['path'] = $networkSettings['path'] ?? null;
                 $config['host'] = $networkSettings['host'] ?? null;
                 break;
-            
+
             case 'xhttp':
                 $config['path'] = $networkSettings['path'] ?? null;
                 $config['host'] = $networkSettings['host'] ?? null;
@@ -386,7 +428,7 @@ class Helper
 
         if (isset($server['obfs']) && isset($server['obfs_password'])) {
             $obfs_password = rawurlencode($server['obfs_password']);
-            $uri .= $server['version'] == 2 ? 
+            $uri .= $server['version'] == 2 ?
                 "&obfs={$server['obfs']}&obfs-password={$obfs_password}" :
                 "&obfs={$server['obfs']}&obfsParam{$obfs_password}";
         }
@@ -511,7 +553,7 @@ class Helper
 
     public static function configureNetworkSettings($server, &$config)
     {
-        $network = $server['network'];
+        $network = $server['network'] ?? null;
         $settings = $server['network_settings'] ?? ($server['networkSettings'] ?? []);
 
         switch ($network) {
