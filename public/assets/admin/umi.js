@@ -5650,6 +5650,7 @@
                   , g = e.emailTemplate
                   , v = (e.themeTemplate,
                 e.email)
+                  , er = e.email_remind || {}
                   , y = e.telegram
                   , b = e.setTelegramWebhookLoading
                   , w = e.app
@@ -5790,7 +5791,19 @@
                     placeholder: "\xa5",
                     defaultValue: t.currency_symbol,
                     onChange: e=>this.set("site", "currency_symbol", e.target.value)
-                })))), f.a.createElement(s["a"].TabPane, {
+                })), f.a.createElement(m, {
+                    title: "\u7b7e\u5230\u529f\u80fd",
+                    description: "\u5f00\u542f\u540e\u7528\u6237\u53ef\u4ee5\u901a\u8fc7\u6bcf\u65e5\u7b7e\u5230\u83b7\u5f97\u968f\u673a\u6d41\u91cf\u5956\u52b1\u3002"
+                }, f.a.createElement(l["a"], {
+                    checked: parseInt(t.checkin_enable),
+                    onChange: e=>this.set("site", "checkin_enable", e ? 1 : 0)
+                })), parseInt(t.checkin_enable) ? f.a.createElement(m, {
+                    title: "\u8fd0\u6c14\u7b7e\u5230",
+                    description: "\u5f00\u542f\u540e\u7528\u6237\u53ef\u4ee5\u4f7f\u7528\u8fd0\u6c14\u7b7e\u5230\uff0c\u53ef\u80fd\u83b7\u5f97\u6216\u6263\u9664\u6d41\u91cf\uff08-100%~+100%\uff09\u3002"
+                }, f.a.createElement(l["a"], {
+                    checked: parseInt(t.lucky_checkin_enable),
+                    onChange: e=>this.set("site", "lucky_checkin_enable", e ? 1 : 0)
+                })) : null)), f.a.createElement(s["a"].TabPane, {
                     tab: "\u5b89\u5168",
                     key: "safe"
                 }, f.a.createElement("div", {
@@ -6292,6 +6305,18 @@
                     placeholder: "\u8bf7\u8f93\u5165",
                     defaultValue: u.server_device_online_min_traffic,
                     onChange: e=>this.set("server", "server_device_online_min_traffic", e.target.value)
+                }))), f.a.createElement("div", {
+                    className: ""
+                }, f.a.createElement(m, {
+                    title: "\u8282\u70b9\u72b6\u6001\u62a5\u544a\u9891\u7387",
+                    description: "\u8282\u70b9\u72b6\u6001\u62a5\u544a\u53d1\u9001\u9891\u7387\uff0c\u5355\u4f4d\u4e3a\u5c0f\u65f6\u3002\u8bbe\u7f6e\u4e3a0\u5219\u4e0d\u53d1\u9001\u62a5\u544a"
+                }, f.a.createElement(a["a"], {
+                    addonAfter: "\u5c0f\u65f6",
+                    size: "large",
+                    type: "number",
+                    placeholder: "\u8bf7\u8f93\u5165",
+                    defaultValue: u.server_status_report_hour,
+                    onChange: e => this.set("server", "server_status_report_hour", e.target.value)
                 }))), f.a.createElement(m, {
                     title: "\u5168\u5c40\u8bbe\u5907\u6570\u9650\u5236\u91c7\u7528\u5bbd\u677e\u6a21\u5f0f",
                     description: "\u5f00\u542f\u540e\u540c\u4e00IP\u5730\u5740\u4f7f\u7528\u591a\u4e2a\u8282\u70b9\u53ea\u7edf\u8ba1\u4e3a\u4e00\u4e2a\u8bbe\u5907"
@@ -6391,6 +6416,62 @@
                         type: "config/testSendMail"
                     })
                 }, "\u53d1\u9001\u6d4b\u8bd5\u90ae\u4ef6")))), f.a.createElement(s["a"].TabPane, {
+                    tab: "\u90ae\u4ef6\u63d0\u9192",
+                    key: "email_remind"
+                }, f.a.createElement("div", {
+                    className: ""
+                }, f.a.createElement("div", {
+                    className: "alert alert-info",
+                    role: "alert"
+                }, f.a.createElement("p", {
+                    className: "mb-0"
+                }, "\u4e0e\u5b9a\u65f6\u4efb\u52a1 send:remindMail \u914d\u5408\uff08\u9ed8\u8ba4\u6bcf\u65e511:30\uff09\u3002\u5230\u671f/\u6d41\u91cf\u9608\u503c\u5728\u6b64\u914d\u7f6e\u3002")), f.a.createElement(m, {
+                    title: "\u5230\u671f\u63d0\u9192\u63d0\u524d\u5929\u6570",
+                    description: "\u5012\u8ba1\u5230\u671f\u524d\u591a\u5c11\u5929\u53d1\u9001\u5230\u671f\u90ae\u4ef6\uff08\u7528\u6237\u987b\u5f00\u542f\u5230\u671f\u63d0\u9192\uff09\u3002\u9ed8\u8ba4 1 \u5929\u3002"
+                }, f.a.createElement(a["a"], {
+                    addonAfter: "\u5929",
+                    size: "large",
+                    type: "number",
+                    placeholder: "1",
+                    defaultValue: er.remind_expire_days || 1,
+                    onChange: e=>this.set("email_remind", "remind_expire_days", parseInt(e.target.value, 10) || 1)
+                })), f.a.createElement(m, {
+                    title: "\u5230\u671f\u63d0\u9192\u6b21\u6570",
+                    description: "\u5728\u63d0\u9192\u5929\u6570\u8303\u56f4\u5185\u7b49\u95f4\u8ddd\u53d1\u9001\u7684\u6b21\u6570\u3002\u5982 3 \u5929 3 \u6b21\uff0c\u5219\u6bcf 24 \u5c0f\u65f6\u53d1\u9001\u4e00\u6b21\u3002\u9ed8\u8ba4 1 \u6b21\u3002"
+                }, f.a.createElement(a["a"], {
+                    addonAfter: "\u6b21",
+                    size: "large",
+                    type: "number",
+                    placeholder: "1",
+                    defaultValue: er.remind_expire_times || 1,
+                    onChange: e=>this.set("email_remind", "remind_expire_times", Math.min(24, Math.max(1, parseInt(e.target.value, 10) || 1)))
+                })), f.a.createElement(m, {
+                    title: "\u6d41\u91cf\u63d0\u9192\u9608\u503c\uff08\u767e\u5206\u6bd4\uff09",
+                    description: "\u5df2\u7528\u6d41\u91cf\u5360\u5957\u9910\u603b\u6d41\u91cf \u2265 \u8be5\u767e\u5206\u6570\u65f6\u53d1\u9001\uff08\u7528\u6237\u987b\u5f00\u542f\u6d41\u91cf\u63d0\u9192\uff0c24 \u5c0f\u65f6\u5185\u4e0d\u91cd\u590d\uff09\u3002\u9ed8\u8ba4 95\u3002"
+                }, f.a.createElement(a["a"], {
+                    addonAfter: "%",
+                    size: "large",
+                    type: "number",
+                    placeholder: "95",
+                    defaultValue: er.remind_traffic_percent || 95,
+                    onChange: e=>{
+                        var t = parseInt(e.target.value, 10);
+                        isNaN(t) && (t = 95),
+                        this.set("email_remind", "remind_traffic_percent", Math.min(100, Math.max(1, t)))
+                    }
+                }))), f.a.createElement(m, {
+                    title: "\u6ce8\u518c\u540e\u9ed8\u8ba4\u5f00\u542f\u5230\u671f\u63d0\u9192",
+                    description: "\u65b0\u7528\u6237\u6ce8\u518c\u540e\u662f\u5426\u9ed8\u8ba4\u5f00\u542f\u5230\u671f\u90ae\u4ef6\u63d0\u9192\u3002"
+                }, f.a.createElement(l["a"], {
+                    checked: er.remind_expire_default !== undefined ? !!er.remind_expire_default : true,
+                    onChange: e=>this.set("email_remind", "remind_expire_default", e ? 1 : 0)
+                })), f.a.createElement(m, {
+                    title: "\u6ce8\u518c\u540e\u9ed8\u8ba4\u5f00\u542f\u6d41\u91cf\u63d0\u9192",
+                    description: "\u65b0\u7528\u6237\u6ce8\u518c\u540e\u662f\u5426\u9ed8\u8ba4\u5f00\u542f\u6d41\u91cf\u4e0d\u8db3\u90ae\u4ef6\u63d0\u9192\u3002"
+                }, f.a.createElement(l["a"], {
+                    checked: er.remind_traffic_default !== undefined ? !!er.remind_traffic_default : true,
+                    onChange: e=>this.set("email_remind", "remind_traffic_default", e ? 1 : 0)
+                }))), f.a.createElement(s["a"].TabPane, {
                     tab: "Telegram",
                     key: "telegram"
                 }, f.a.createElement("div", {
@@ -16792,6 +16873,7 @@
             frontend: {},
             server: {},
             email: {},
+            email_remind: {},
             telegram: {},
             app: {},
             safe: {},
@@ -98487,7 +98569,7 @@
                 }), l.a.createElement("div", {
                     className: "text-muted mb-1",
                     style: { width: '120px' }
-                }, "\u5b9e\u65f6\u6ce8\u518c"), l.a.createElement("div", {
+                }, "\u4eca\u65e5\u6ce8\u518c"), l.a.createElement("div", {
                     className: "display-4 text-black font-w300 mb-2"
                 }, t.day_register_total ? t.day_register_total : "0")))))), l.a.createElement("div", {
                     className: "col-lg-12 js-appear-enabled animated",
@@ -98523,7 +98605,35 @@
                     class: "fs-3 text-dark mb-0"
                 }, t.month_register_total || "-"), l.a.createElement("p", {
                     class: "text-muted mb-0"
-                }, "\u672c\u6708\u65b0\u589e\u7528\u6237")))))), l.a.createElement("div", {
+                }, "\u672c\u6708\u65b0\u589e\u7528\u6237")),
+                    // === 新加的总用户开始 ===
+                    l.a.createElement("div", {
+                        class: "px-4 px-sm-5 border-start"
+                    }, l.a.createElement("p", {
+                        class: "fs-3 text-dark mb-0"
+                    }, t.total_user || "0"), l.a.createElement("p", {
+                        class: "text-muted mb-0"
+                    }, "\u603b\u7528\u6237")),
+                    // === 新加的总用户结束 ===
+                    // === 新加的累计付费用户开始 ===
+                    l.a.createElement("div", {
+                        class: "px-4 px-sm-5 border-start"
+                    }, l.a.createElement("p", {
+                        class: "fs-3 text-dark mb-0"
+                    }, t.paid_user_total || "0"), l.a.createElement("p", {
+                        class: "text-muted mb-0"
+                    }, "\u7d2f\u8ba1\u4ed8\u8d39\u7528\u6237")),
+                    // === 新加的累计付费用户结束 ===
+                    // === 新加的有效付费用户开始 ===
+                    l.a.createElement("div", {
+                        class: "px-4 px-sm-5 border-start"
+                    }, l.a.createElement("p", {
+                        class: "fs-3 text-dark mb-0"
+                    }, t.paid_user_active || "0"), l.a.createElement("p", {
+                        class: "text-muted mb-0"
+                    }, "\u6709\u6548\u4ed8\u8d39\u7528\u6237")),
+                    // === 新加的有效付费用户结束 ===
+                    )))), l.a.createElement("div", {
                     className: "col-lg-12 js-appear-enabled animated",
                     "data-toggle": "appear"
                 }, l.a.createElement("div", {
