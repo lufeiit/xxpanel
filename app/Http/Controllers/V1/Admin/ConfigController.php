@@ -104,6 +104,8 @@ class ConfigController extends Controller
                 'tos_url' => config('v2board.tos_url'),
                 'currency' => config('v2board.currency', 'CNY'),
                 'currency_symbol' => config('v2board.currency_symbol', '¥'),
+                'checkin_enable' => (int)config('v2board.checkin_enable', 0),
+                'lucky_checkin_enable' => (int)config('v2board.lucky_checkin_enable', 0),
             ],
             'subscribe' => [
                 'plan_change_enable' => (int)config('v2board.plan_change_enable', 1),
@@ -131,7 +133,8 @@ class ConfigController extends Controller
                 'server_push_interval' => config('v2board.server_push_interval', 60),
                 'server_node_report_min_traffic' => config('v2board.server_node_report_min_traffic', 0),
                 'server_device_online_min_traffic' => config('v2board.server_device_online_min_traffic', 0),
-                'device_limit_mode' => config('v2board.device_limit_mode', 0)
+                'device_limit_mode' => config('v2board.device_limit_mode', 0),
+                'server_status_report_hour' => (int)config('v2board.server_status_report_hour', 0)
             ],
             'email' => [
                 'email_template' => config('v2board.email_template', 'default'),
@@ -141,6 +144,13 @@ class ConfigController extends Controller
                 'email_password' => config('v2board.email_password'),
                 'email_encryption' => config('v2board.email_encryption'),
                 'email_from_address' => config('v2board.email_from_address')
+            ],
+            'email_remind' => [
+                'remind_expire_days' => (int)config('v2board.remind_expire_days', 1),
+                'remind_traffic_percent' => (int)config('v2board.remind_traffic_percent', 95),
+                'remind_expire_times' => (int)config('v2board.remind_expire_times', 1),
+                'remind_expire_default' => (int)config('v2board.remind_expire_default', 1),
+                'remind_traffic_default' => (int)config('v2board.remind_traffic_default', 1),
             ],
             'telegram' => [
                 'telegram_bot_enable' => config('v2board.telegram_bot_enable', 0),
@@ -179,16 +189,134 @@ class ConfigController extends Controller
                     $key => $data[$key]
                 ]
             ]);
-        };
+        }
         // TODO: default should be in Dict
         return response([
             'data' => $data
         ]);
     }
 
+    public function fetchDomainRewriteRules()
+    {
+        return response([
+            'data' => config('v2board.subscribe_domain_rewrite_rules', [])
+        ]);
+    }
+
+    public function saveDomainRewriteRules(Request $request)
+    {
+        $rules = $request->input('rules', []);
+        if (!is_array($rules))
+            abort(422, '参数格式错误');
+        // 校验每条规则
+        foreach ($rules as $index => $rule) {
+            if (empty($rule['ua']) || empty($rule['domain']) || empty($rule['ip'])) {
+                abort(422, "第 " . ($index + 1) . " 条规则缺少必填字段（UA、域名、IP）");
+            }
+            if (!filter_var($rule['ip'], FILTER_VALIDATE_IP) && !preg_match('/^[\w.-]+$/', $rule['ip'])) {
+                abort(422, "第 " . ($index + 1) . " 条规则的 IP 格式不正确");
+            }
+        }
+        $config = config('v2board');
+        $config['subscribe_domain_rewrite_rules'] = array_values(array_map(function ($rule) {
+            return [
+                'ua' => trim($rule['ua']),
+                'domain' => trim($rule['domain']),
+                'ip' => trim($rule['ip']),
+                'remark' => trim($rule['remark'] ?? ''),
+            ];
+        }, $rules));
+        $data = var_export($config, 1);
+        if (!File::put(base_path() . '/config/v2board.php', "<?php\n return $data ;")) {
+            abort(500, '修改失败');
+        }
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+        Artisan::call('config:cache');
+        return response([
+            'data' => true
+        ]);
+    }
+
+    public function fetchSubscribeNodeWhitelistRules()
+    {
+        return response([
+            'data' => config('v2board.subscribe_node_whitelist_rules', [])
+        ]);
+    }
+
+    public function saveSubscribeNodeWhitelistRules(Request $request)
+    {
+        $allowedTypes = ['shadowsocks', 'vmess', 'vless', 'trojan', 'tuic', 'hysteria', 'anytls', 'v2node'];
+        $rules = $request->input('rules', []);
+        if (!is_array($rules))
+            abort(422, '参数格式错误');
+        foreach ($rules as $index => $rule) {
+            if (!is_array($rule)) {
+                abort(422, "第 " . ($index + 1) . " 条规则格式错误");
+            }
+            $ua = isset($rule['ua']) ? (string)$rule['ua'] : '';
+            if (trim($ua) === '') {
+                abort(422, "第 " . ($index + 1) . " 条规则的 UA 关键词不能为空");
+            }
+            if (empty($rule['nodes']) || !is_array($rule['nodes'])) {
+                abort(422, "第 " . ($index + 1) . " 条规则未选择任何节点");
+            }
+            foreach ($rule['nodes'] as $nodeIndex => $node) {
+                if (!is_array($node)) {
+                    abort(422, "第 " . ($index + 1) . " 条规则的第 " . ($nodeIndex + 1) . " 个节点格式错误");
+                }
+                if (empty($node['type']) || !isset($node['id'])) {
+                    abort(422, "第 " . ($index + 1) . " 条规则的第 " . ($nodeIndex + 1) . " 个节点缺少 type 或 id");
+                }
+                if (!in_array($node['type'], $allowedTypes, true)) {
+                    abort(422, "第 " . ($index + 1) . " 条规则包含不支持的节点类型：" . $node['type']);
+                }
+                if (!is_numeric($node['id'])) {
+                    abort(422, "第 " . ($index + 1) . " 条规则包含非法的节点 id");
+                }
+            }
+        }
+        $config = config('v2board');
+        $config['subscribe_node_whitelist_rules'] = array_values(array_map(function ($rule) {
+            $nodes = [];
+            $seen = [];
+            foreach ($rule['nodes'] as $node) {
+                $key = $node['type'] . ':' . (int)$node['id'];
+                if (isset($seen[$key])) continue;
+                $seen[$key] = true;
+                $nodes[] = [
+                    'type' => $node['type'],
+                    'id' => (int)$node['id'],
+                ];
+            }
+            return [
+                'ua' => trim($rule['ua']),
+                'nodes' => $nodes,
+                'remark' => trim($rule['remark'] ?? ''),
+            ];
+        }, $rules));
+        $data = var_export($config, 1);
+        if (!File::put(base_path() . '/config/v2board.php', "<?php\n return $data ;")) {
+            abort(500, '修改失败');
+        }
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
+        }
+        Artisan::call('config:cache');
+        return response([
+            'data' => true
+        ]);
+    }
+
     public function save(ConfigSave $request)
     {
         $data = $request->validated();
+        // 签到联动：关闭普通签到时自动关闭运气签到
+        if (isset($data['checkin_enable']) && !$data['checkin_enable']) {
+            $data['lucky_checkin_enable'] = 0;
+        }
         $config = config('v2board');
         foreach (ConfigSave::RULES as $k => $v) {
             if (!in_array($k, array_keys(ConfigSave::RULES))) {
