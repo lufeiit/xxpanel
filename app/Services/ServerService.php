@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Cache;
 
 class ServerService
 {
-    public function getAvailableVless(User $user): array
+    public function getAvailableVless(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false):array
     {
         $servers = [];
         $model = ServerVless::orderBy('sort', 'ASC');
@@ -27,7 +27,8 @@ class ServerService
         foreach ($server as $key => $v) {
             if (!$v['show']) continue;
             $server[$key]['type'] = 'vless';
-            if (!in_array($user->group_id, $server[$key]['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $server[$key]['group_id'])) continue;
             if (strpos($server[$key]['port'], '-') !== false) {
                 $server[$key]['port'] = Helper::randomPort($server[$key]['port']);
             }
@@ -49,6 +50,15 @@ class ServerService
                     $server[$key]['encryption_settings'] = array_diff_key($server[$key]['encryption_settings'], array('private_key' => ''));
                 }
             }
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($server[$key]['host'])) {
+                $server[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($server[$key]['server'])) {
+                $server[$key]['server'] = 'hidden.example.com';
+            }
+
             $servers[] = $server[$key]->toArray();
         }
 
@@ -56,7 +66,7 @@ class ServerService
         return $servers;
     }
 
-    public function getAvailableVmess(User $user): array
+    public function getAvailableVmess(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false):array
     {
         $servers = [];
         $model = ServerVmess::orderBy('sort', 'ASC');
@@ -64,7 +74,8 @@ class ServerService
         foreach ($vmess as $key => $v) {
             if (!$v['show']) continue;
             $vmess[$key]['type'] = 'vmess';
-            if (!in_array($user->group_id, $vmess[$key]['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $vmess[$key]['group_id'])) continue;
             if (strpos($vmess[$key]['port'], '-') !== false) {
                 $vmess[$key]['port'] = Helper::randomPort($vmess[$key]['port']);
             }
@@ -73,6 +84,15 @@ class ServerService
             } else {
                 $vmess[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_VMESS_LAST_CHECK_AT', $vmess[$key]['id']));
             }
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($vmess[$key]['host'])) {
+                $vmess[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($vmess[$key]['server'])) {
+                $vmess[$key]['server'] = 'hidden.example.com';
+            }
+
             $servers[] = $vmess[$key]->toArray();
         }
 
@@ -80,7 +100,7 @@ class ServerService
         return $servers;
     }
 
-    public function getAvailableTrojan(User $user): array
+    public function getAvailableTrojan(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false):array
     {
         $servers = [];
         $model = ServerTrojan::orderBy('sort', 'ASC');
@@ -88,7 +108,8 @@ class ServerService
         foreach ($trojan as $key => $v) {
             if (!$v['show']) continue;
             $trojan[$key]['type'] = 'trojan';
-            if (!in_array($user->group_id, $trojan[$key]['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $trojan[$key]['group_id'])) continue;
             if (strpos($trojan[$key]['port'], '-') !== false) {
                 $trojan[$key]['port'] = Helper::randomPort($trojan[$key]['port']);
             }
@@ -97,12 +118,21 @@ class ServerService
             } else {
                 $trojan[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_TROJAN_LAST_CHECK_AT', $trojan[$key]['id']));
             }
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($trojan[$key]['host'])) {
+                $trojan[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($trojan[$key]['server'])) {
+                $trojan[$key]['server'] = 'hidden.example.com';
+            }
+
             $servers[] = $trojan[$key]->toArray();
         }
         return $servers;
     }
 
-    public function getAvailableTuic(User $user)
+    public function getAvailableTuic(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false)
     {
         $availableServers = [];
         $model = ServerTuic::orderBy('sort', 'ASC');
@@ -111,17 +141,27 @@ class ServerService
             if (!$v['show']) continue;
             $servers[$key]['type'] = 'tuic';
             $servers[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_TUIC_LAST_CHECK_AT', $v['id']));
-            if (!in_array($user->group_id, $v['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $v['group_id'])) continue;
             if (isset($servers[$v['parent_id']])) {
                 $servers[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_TUIC_LAST_CHECK_AT', $v['parent_id']));
                 $servers[$key]['created_at'] = $servers[$v['parent_id']]['created_at'];
             }
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($servers[$key]['host'])) {
+                $servers[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($servers[$key]['server'])) {
+                $servers[$key]['server'] = 'hidden.example.com';
+            }
+
             $availableServers[] = $servers[$key]->toArray();
         }
         return $availableServers;
     }
 
-    public function getAvailableHysteria(User $user)
+    public function getAvailableHysteria(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false)
     {
         $availableServers = [];
         $model = ServerHysteria::orderBy('sort', 'ASC');
@@ -130,18 +170,28 @@ class ServerService
             if (!$v['show']) continue;
             $servers[$key]['type'] = 'hysteria';
             $servers[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_HYSTERIA_LAST_CHECK_AT', $v['id']));
-            if (!in_array($user->group_id, $v['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $v['group_id'])) continue;
             if (isset($servers[$v['parent_id']])) {
                 $servers[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_HYSTERIA_LAST_CHECK_AT', $v['parent_id']));
                 $servers[$key]['created_at'] = $servers[$v['parent_id']]['created_at'];
             }
             $servers[$key]['server_key'] = Helper::getServerKey($servers[$key]['created_at'], 16);
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($servers[$key]['host'])) {
+                $servers[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($servers[$key]['server'])) {
+                $servers[$key]['server'] = 'hidden.example.com';
+            }
+
             $availableServers[] = $servers[$key]->toArray();
         }
         return $availableServers;
     }
 
-    public function getAvailableShadowsocks(User $user)
+    public function getAvailableShadowsocks(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false)
     {
         $servers = [];
         $model = ServerShadowsocks::orderBy('sort', 'ASC');
@@ -150,7 +200,8 @@ class ServerService
             if (!$v['show']) continue;
             $shadowsocks[$key]['type'] = 'shadowsocks';
             $shadowsocks[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_SHADOWSOCKS_LAST_CHECK_AT', $v['id']));
-            if (!in_array($user->group_id, $v['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $v['group_id'])) continue;
             if (strpos($v['port'], '-') !== false) {
                 $shadowsocks[$key]['port'] = Helper::randomPort($v['port']);
             }
@@ -163,12 +214,21 @@ class ServerService
                 $shadowsocks[$key]['obfs-host'] = $v['obfs_settings']['host'];
                 $shadowsocks[$key]['obfs-path'] = $v['obfs_settings']['path'];
             }
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($shadowsocks[$key]['host'])) {
+                $shadowsocks[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($shadowsocks[$key]['server'])) {
+                $shadowsocks[$key]['server'] = 'hidden.example.com';
+            }
+
             $servers[] = $shadowsocks[$key]->toArray();
         }
         return $servers;
     }
 
-    public function getAvailableAnyTLS(User $user)
+    public function getAvailableAnyTLS(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false)
     {
         $servers = [];
         $model = ServerAnytls::orderBy('sort', 'ASC');
@@ -177,7 +237,8 @@ class ServerService
             if (!$v['show']) continue;
             $anytls[$key]['type'] = 'anytls';
             $anytls[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_ANYTLS_LAST_CHECK_AT', $v['id']));
-            if (!in_array($user->group_id, $v['group_id'])) continue;
+            // 如果不忽略组限制且用户不在允许的组中，则跳过
+            if (!$ignoreGroupLimit && !in_array($user->group_id, $v['group_id'])) continue;
             if (strpos($v['port'], '-') !== false) {
                 $anytls[$key]['port'] = Helper::randomPort($v['port']);
             }
@@ -185,9 +246,30 @@ class ServerService
                 $anytls[$key]['last_check_at'] = Cache::get(CacheKey::get('SERVER_ANYTLS_LAST_CHECK_AT', $v['parent_id']));
                 $anytls[$key]['created_at'] = $anytls[$v['parent_id']]['created_at'];
             }
+
+            // 如果不显示真实地址，则隐藏
+            if (!$showRealAddress && isset($anytls[$key]['host'])) {
+                $anytls[$key]['host'] = 'hidden.example.com';
+            }
+            if (!$showRealAddress && isset($anytls[$key]['server'])) {
+                $anytls[$key]['server'] = 'hidden.example.com';
+            }
+
             $servers[] = $anytls[$key]->toArray();
         }
         return $servers;
+    }
+
+    public function getServers(User $user, bool $isAvailable)
+    {
+        if ($isAvailable) {
+            // 用户有有效订阅，返回完整的节点列表
+            return $this->getAvailableServers($user);
+        } else {
+            // 用户没有有效订阅，返回节点列表但隐藏真实地址
+            // 注意：这里我们传递一个特殊的标志来表示需要显示所有节点
+            return $this->getAvailableServers($user, false, true);
+        }
     }
 
     public function getAvailableV2node(User $user)
@@ -222,7 +304,7 @@ class ServerService
         return $servers;
     }
 
-    public function getAvailableServers(User $user)
+    public function getAvailableServers(User $user, bool $showRealAddress = true, bool $ignoreGroupLimit = false)
     {
         $servers = array_merge(
             $this->getAvailableShadowsocks($user),
@@ -236,14 +318,47 @@ class ServerService
         );
         $tmp = array_column($servers, 'sort');
         array_multisort($tmp, SORT_ASC, $servers);
-        return array_map(function ($server) {
-            if (strpos($server['port'], '-')) {
-                $server['mport'] = (string)$server['port'];
-            } else {
-                $server['port'] = (int)$server['port'];
+        return array_map(function ($server) use ($showRealAddress) {
+            // 如果不显示真实地址，则隐藏所有地址字段并伪装其他字段
+            if (!$showRealAddress) {
+                $addressFields = ['host', 'server', 'address'];
+                foreach ($addressFields as $field) {
+                    if (isset($server[$field])) {
+                        $server[$field] = 'hidden.example.com';
+                    }
+                }
+
+                // 伪装其他字段
+                $server['port'] = 0;
+                if (isset($server['server_port'])) {
+                    $server['server_port'] = 0;
+                }
+                $server['is_online'] = 1;
+                $server['cache_key'] = '';
+                $server['last_check_at'] = time(); // 设置为当前时间
             }
-            $server['is_online'] = (time() - 300 > $server['last_check_at']) ? 0 : 1;
-            $server['cache_key'] = "{$server['type']}-{$server['id']}-{$server['updated_at']}-{$server['is_online']}";
+
+            // 处理端口字段
+            if (isset($server['port'])) {
+                if (strpos((string)$server['port'], '-')) {
+                    $server['mport'] = (string)$server['port'];
+                } else {
+                    $server['port'] = (int)$server['port'];
+                }
+            }
+
+            // 处理在线状态
+            if (!isset($server['is_online'])) {
+                $server['is_online'] = (time() - 300 > ($server['last_check_at'] ?? 0)) ? 0 : 1;
+            }
+
+            // 处理缓存键
+            if (!isset($server['cache_key']) || ($showRealAddress && $server['cache_key'] === '')) {
+                $server['cache_key'] = isset($server['type']) && isset($server['id']) && isset($server['updated_at']) && isset($server['is_online'])
+                    ? "{$server['type']}-{$server['id']}-{$server['updated_at']}-{$server['is_online']}"
+                    : '';
+            }
+
             return $server;
         }, $servers);
     }
