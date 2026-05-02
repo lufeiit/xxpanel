@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Services\MailService;
 use Illuminate\Console\Command;
 use App\Models\User;
+use App\Utils\CacheKey;
+use Illuminate\Support\Facades\Cache;
 
 class SendRemindMail extends Command
 {
@@ -43,9 +45,39 @@ class SendRemindMail extends Command
         $users = User::all();
         $mailService = new MailService();
         foreach ($users as $user) {
-            if ($user->remind_expire) $mailService->remindExpire($user);
+            // 如果用户开启了邮件通知
+            if ($user->remind_expire) {
+                $mailService->remindExpire($user);
+            }
+            // 如果用户关闭了邮件通知但绑定了Telegram
+            elseif ($user->telegram_id) {
+                $maxLoops = MailService::expireRemindTimes();
+                $loops = 0;
+                while ($mailService->shouldSendExpireRemind($user) && $loops < $maxLoops) {
+                    $loops++;
+                    $remainHours = max(1, (int)round(($user->expired_at - time()) / 3600));
+                    $expireDate = date('Y-m-d H:i', $user->expired_at);
+                    $message = "⏰ 您的服务即将到期（剩余约 {$remainHours} 小时），请及时续费。\n\n📅 到期时间：{$expireDate}";
+                    $mailService->sendTelegramNotification($user, $message);
+                    $mailService->incrementExpireSentCount($user);
+                }
+            }
+            
+            // 如果用户开启了邮件通知
             if (!($user->expired_at !== NULL && $user->expired_at < time()) && $user->remind_traffic) {
                 $mailService->remindTraffic($user);
+            } 
+            // 如果用户关闭了邮件通知但绑定了Telegram
+            elseif ($user->telegram_id) {
+                // 检查流量是否即将耗尽
+                if ($mailService->remindTrafficIsWarnValue($user->u, $user->d, $user->transfer_enable)) {
+                    $flag = CacheKey::get('LAST_SEND_EMAIL_REMIND_TRAFFIC', $user->id);
+                    if (!Cache::get($flag) && Cache::put($flag, 1, 24 * 3600)) {
+                        $pct = MailService::trafficRemindPercent();
+                        $message = "⚠️ 您的流量使用已达到{$pct}%，请及时充值。\n\n💡 当前已使用流量：{$mailService->formatTraffic($user->u + $user->d)}\n📊 总流量：{$mailService->formatTraffic($user->transfer_enable)}";
+                        $mailService->sendTelegramNotification($user, $message);
+                    }
+                }
             }
         }
     }
