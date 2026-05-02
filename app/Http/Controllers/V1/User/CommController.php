@@ -38,4 +38,45 @@ class CommController extends Controller
             'data' => $payment->config['stripe_pk_live']
         ]);
     }
+
+    public function getIpInfo(Request $request)
+    {
+        try {
+            $ip = $request->input('ip', $request->ip());
+            
+            // 使用 ipwho.is API
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "https://ipwho.is/{$ip}");
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode === 200 && $response) {
+                $data = json_decode($response, true);
+                return response([
+                    'data' => $data
+                ]);
+            }
+            
+            return response([
+                'data' => [
+                    'ip' => $ip,
+                    'success' => false,
+                    'message' => 'Failed to get IP info'
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response([
+                'data' => [
+                    'ip' => $request->ip(),
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ]
+            ]);
+        }
+    }
 }
